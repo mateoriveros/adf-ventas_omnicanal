@@ -1,0 +1,82 @@
+{
+	"name": "df_detalle_pedidos",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "detalle_pedidos_csv",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "detalle_pedidos_sql",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          detalle_id as string,",
+				"          pedido_id as string,",
+				"          producto_id as string,",
+				"          cantidad as string,",
+				"          precio_unitario as string,",
+				"          descuento_linea as string,",
+				"          total_linea as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(precio_unitario = toDecimal(replace(trim(precio_unitario), ',', '.')),",
+				"          descuento_linea = toDecimal(replace(trim(descuento_linea), ',', '.')),",
+				"          total_linea = toDecimal(replace(trim(total_linea), ',', '.')),",
+				"          cantidad = toInteger(cantidad)) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(detalle_id) && !isNull(pedido_id) && !isNull(producto_id) && cantidad > 0 && precio_unitario >= 0,",
+				"     disjoint: false) ~> split1@(validos, rechazados)",
+				"split1@validos sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          detalle_id as string,",
+				"          pedido_id as string,",
+				"          producto_id as string,",
+				"          cantidad as integer,",
+				"          precio_unitario as decimal(10,2),",
+				"          descuento_linea as decimal(8,2),",
+				"          total_linea as decimal(12,2)",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          detalle_id,",
+				"          pedido_id,",
+				"          producto_id,",
+				"          cantidad,",
+				"          precio_unitario,",
+				"          descuento_linea,",
+				"          total_linea",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
