@@ -27,9 +27,6 @@
 				},
 				{
 					"name": "split1"
-				},
-				{
-					"name": "derivedColumn2"
 				}
 			],
 			"scriptLines": [
@@ -44,11 +41,11 @@
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> source1",
 				"source1 derive(nombre_restaurante = initCap(lower(trim(nombre_restaurante))),",
-				"          activo = replace(trim(activo),'activo','Sí')) ~> derivedColumn1",
-				"derivedColumn1 split(!isNull(restaurante_id) && !isNull(nombre_restaurante),",
+				"          activo = replace(trim(activo),'activo','Sí'),",
+				"          calificacion_promedio = toDecimal(calificacion_promedio)) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(restaurante_id) && !isNull(nombre_restaurante) && calificacion_promedio >= 0 && calificacion_promedio <= 5,",
 				"     disjoint: false) ~> split1@(validos, rechazados)",
-				"split1@validos derive(calificacion_promedio = toDecimal(calificacion_promedio)) ~> derivedColumn2",
-				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"split1@validos sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          restaurante_id as string,",
